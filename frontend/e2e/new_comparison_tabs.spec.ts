@@ -12,17 +12,17 @@ test.describe("New Comparison page tabs", () => {
     await page.goto("/");
   });
 
-  // Scope to the first RepositoryForm (Repo A) since both A and B share the same placeholders
-  test("Local Path tab is active by default", async ({ page }) => {
+  // Default tab is now Git URL (most common use case)
+  test("Git URL tab is active by default", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "New Comparison" })).toBeVisible();
-    await expect(page.getByPlaceholder("/path/to/codebase").first()).toBeVisible();
+    await expect(page.getByPlaceholder(/github\.com/i).first()).toBeVisible();
   });
 
-  test("switching to Git URL tab shows URL input", async ({ page }) => {
-    // Click the first "Git URL" tab (Repo A); Repo B still shows Local Path
-    await page.getByTestId("tab-git").first().click();
-    await expect(page.getByPlaceholder(/github\.com/i).first()).toBeVisible();
-    // Repo A's git URL input is now shown; Repo B still has local path
+  test("switching to Local Path tab shows path input", async ({ page }) => {
+    // Click the first "Local Path" tab (Repo A); Repo B still shows Git URL
+    await page.getByTestId("tab-local").first().click();
+    await expect(page.getByPlaceholder("/path/to/codebase").first()).toBeVisible();
+    // Repo A switched to local; Repo B still on git URL
     await expect(page.getByPlaceholder(/github\.com/i)).toHaveCount(1);
   });
 
@@ -32,9 +32,11 @@ test.describe("New Comparison page tabs", () => {
   });
 
   test("tabs are mutually exclusive", async ({ page }) => {
-    await page.getByTestId("tab-git").first().click();
+    // Switch Repo A to local, then back to git — local input should disappear
     await page.getByTestId("tab-local").first().click();
     await expect(page.getByPlaceholder("/path/to/codebase").first()).toBeVisible();
-    await expect(page.getByPlaceholder(/github\.com/i).first()).not.toBeVisible();
+    await page.getByTestId("tab-git").first().click();
+    await expect(page.getByPlaceholder(/github\.com/i).first()).toBeVisible();
+    await expect(page.getByPlaceholder("/path/to/codebase").first()).not.toBeVisible();
   });
 });
